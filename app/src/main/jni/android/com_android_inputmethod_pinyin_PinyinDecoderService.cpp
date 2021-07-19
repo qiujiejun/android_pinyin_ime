@@ -214,7 +214,8 @@ JNIEXPORT jboolean JNICALL nativeImFlushCache(JNIEnv *env, jclass clazz) {
 
 JNIEXPORT jint JNICALL nativeImGetPredictsNum(JNIEnv *env, jclass clazz,
                                               jstring fixed_str) {
-  char16 *fixed_ptr = (char16*)(*env).GetStringChars(fixed_str, false);
+  jboolean isCopy = JNI_FALSE;
+  char16 *fixed_ptr = (char16*)(*env).GetStringChars(fixed_str, &isCopy);
   size_t fixed_len = (size_t)(*env).GetStringLength(fixed_str);
 
   char16 fixed_buf[kMaxPredictSize + 1];
