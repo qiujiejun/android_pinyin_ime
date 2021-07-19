@@ -30,3 +30,4 @@ captures/
 # Keystore files
 *.jks
 
+app/.cxx
