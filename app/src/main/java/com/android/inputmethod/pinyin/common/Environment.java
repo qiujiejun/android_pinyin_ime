@@ -119,8 +119,8 @@ public class Environment {
     if (mConfig.orientation != newConfig.orientation) {
       WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
       Display d = wm.getDefaultDisplay();
-      mScreenWidth = d.getWidth();
-      mScreenHeight = d.getHeight();
+      mScreenWidth = d.getWidth() - 750;
+      mScreenHeight = d.getHeight() - 850;
 
       int scale;
       if (mScreenHeight > mScreenWidth) {

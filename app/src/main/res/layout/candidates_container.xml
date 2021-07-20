@@ -20,13 +20,19 @@
   android:layout_width="0dip"
   android:layout_height="0dip">
 
+  <TextView
+    android:id="@+id/textview_reserve_for_non_touchable"
+    android:layout_width="750px"
+    android:layout_height="80px"
+    android:layout_alignParentLeft="true"/>
+
   <ImageButton android:id="@+id/arrow_left_btn"
     android:background="@drawable/arrow_bg"
     android:src="@drawable/arrow_left"
     android:layout_height="match_parent"
     android:layout_width="30dip"
     android:clickable="true"
-    android:layout_alignParentLeft="true"/>
+    android:layout_toRightOf="@id/textview_reserve_for_non_touchable"/>
 
   <ImageButton android:id="@+id/arrow_right_btn"
     android:background="@drawable/arrow_bg"

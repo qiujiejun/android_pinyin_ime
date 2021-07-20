@@ -55,6 +55,7 @@ import com.android.inputmethod.pinyin.skb.SoftKey;
 import com.android.inputmethod.pinyin.ui.BalloonHint;
 import com.android.inputmethod.pinyin.ui.CandidatesContainer;
 import com.android.inputmethod.pinyin.ui.ComposingView;
+import com.android.inputmethod.pinyin.ui.RootContainer;
 import com.android.inputmethod.pinyin.ui.SkbContainer;
 
 import java.util.ArrayList;
@@ -87,9 +88,9 @@ public class PinyinIME extends InputMethodService {
   private InputModeSwitcher mInputModeSwitcher;
 
   /**
-   * Soft keyboard container view to host real soft keyboard view.
+   * root container for avoid the screen untouchable area
    */
-  private SkbContainer mSkbContainer;
+  private RootContainer mRootContainer;
 
   /**
    * The floating container which contains the composing view. If necessary,
@@ -226,8 +227,8 @@ public class PinyinIME extends InputMethodService {
     env.onConfigurationChanged(newConfig, this);
 
     // Clear related UI of the previous configuration.
-    if (null != mSkbContainer) {
-      mSkbContainer.dismissPopups();
+    if (null != mRootContainer.getSkbContainer()) {
+      mRootContainer.getSkbContainer().dismissPopups();
     }
     if (null != mCandidatesBalloon) {
       mCandidatesBalloon.dismiss();
@@ -321,7 +322,7 @@ public class PinyinIME extends InputMethodService {
     // Back key is used to dismiss all popup UI in a soft keyboard.
     if (keyCode == KeyEvent.KEYCODE_BACK) {
       if (isInputViewShown()) {
-        if (mSkbContainer.handleBack(realAction)) return true;
+        if (mRootContainer.getSkbContainer().handleBack(realAction)) return true;
       }
     }
 
@@ -735,8 +736,8 @@ public class PinyinIME extends InputMethodService {
     mImeState = ImeState.STATE_COMPOSING;
     if (!updateUi) return;
 
-    if (null != mSkbContainer && mSkbContainer.isShown()) {
-      mSkbContainer.toggleCandidateMode(true);
+    if (null != mRootContainer.getSkbContainer() && mRootContainer.getSkbContainer().isShown()) {
+      mRootContainer.getSkbContainer().toggleCandidateMode(true);
     }
   }
 
@@ -744,8 +745,8 @@ public class PinyinIME extends InputMethodService {
     mImeState = ImeState.STATE_INPUT;
     if (!updateUi) return;
 
-    if (null != mSkbContainer && mSkbContainer.isShown()) {
-      mSkbContainer.toggleCandidateMode(true);
+    if (null != mRootContainer.getSkbContainer() && mRootContainer.getSkbContainer().isShown()) {
+      mRootContainer.getSkbContainer().toggleCandidateMode(true);
     }
     showCandidateWindow(true);
   }
@@ -830,8 +831,8 @@ public class PinyinIME extends InputMethodService {
       if (candId >= 0 && mDecInfo.canDoPrediction()) {
         commitResultText(resultStr);
         mImeState = ImeState.STATE_PREDICT;
-        if (null != mSkbContainer && mSkbContainer.isShown()) {
-          mSkbContainer.toggleCandidateMode(false);
+        if (null != mRootContainer.getSkbContainer() && mRootContainer.getSkbContainer().isShown()) {
+          mRootContainer.getSkbContainer().toggleCandidateMode(false);
         }
         // Try to get the prediction list.
         if (Settings.getPrediction()) {
@@ -953,7 +954,7 @@ public class PinyinIME extends InputMethodService {
     if (sKey.isUserDefKey()) {
       updateIcon(mInputModeSwitcher.switchModeForUserKey(keyCode));
       resetToIdleState(false);
-      mSkbContainer.updateInputMode();
+      mRootContainer.getSkbContainer().updateInputMode();
     } else {
       if (sKey.isKeyCodeKey()) {
         KeyEvent eDown = new KeyEvent(0, 0, KeyEvent.ACTION_DOWN, keyCode, 0, 0, 0, 0,
@@ -987,10 +988,10 @@ public class PinyinIME extends InputMethodService {
 
       // If the current soft keyboard is not sticky, IME needs to go
       // back to the previous soft keyboard automatically.
-      if (!mSkbContainer.isCurrentSkbSticky()) {
+      if (!mRootContainer.getSkbContainer().isCurrentSkbSticky()) {
         updateIcon(mInputModeSwitcher.requestBackToPreviousSkb());
         resetToIdleState(false);
-        mSkbContainer.updateInputMode();
+        mRootContainer.getSkbContainer().updateInputMode();
       }
     }
   }
@@ -1002,7 +1003,7 @@ public class PinyinIME extends InputMethodService {
 
     setCandidatesViewShown(true);
 
-    if (null != mSkbContainer) mSkbContainer.requestLayout();
+    if (null != mRootContainer.getSkbContainer()) mRootContainer.getSkbContainer().requestLayout();
 
     if (null == mCandidatesContainer) {
       resetToIdleState(false);
@@ -1027,8 +1028,8 @@ public class PinyinIME extends InputMethodService {
     }
     setCandidatesViewShown(false);
 
-    if (null != mSkbContainer && mSkbContainer.isShown()) {
-      mSkbContainer.toggleCandidateMode(false);
+    if (null != mRootContainer.getSkbContainer() && mRootContainer.getSkbContainer().isShown()) {
+      mRootContainer.getSkbContainer().toggleCandidateMode(false);
     }
   }
 
@@ -1044,8 +1045,8 @@ public class PinyinIME extends InputMethodService {
       Log.e(TAG, "Fail to show the PopupWindow.");
     }
 
-    if (null != mSkbContainer && mSkbContainer.isShown()) {
-      mSkbContainer.toggleCandidateMode(false);
+    if (null != mRootContainer.getSkbContainer() && mRootContainer.getSkbContainer().isShown()) {
+      mRootContainer.getSkbContainer().toggleCandidateMode(false);
     }
 
     mDecInfo.resetCandidates();
@@ -1069,11 +1070,9 @@ public class PinyinIME extends InputMethodService {
       Log.d(TAG, "onCreateInputView.");
     }
     LayoutInflater inflater = getLayoutInflater();
-    mSkbContainer = (SkbContainer) inflater.inflate(R.layout.skb_container, null);
-    mSkbContainer.setService(this);
-    mSkbContainer.setInputModeSwitcher(mInputModeSwitcher);
-    mSkbContainer.setGestureDetector(mGestureDetectorSkb);
-    return mSkbContainer;
+    mRootContainer = (RootContainer) inflater.inflate(R.layout.root_container, null);
+    mRootContainer.init(this, mInputModeSwitcher, mGestureDetectorSkb);
+    return mRootContainer;
   }
 
   /**
@@ -1101,7 +1100,7 @@ public class PinyinIME extends InputMethodService {
     }
     updateIcon(mInputModeSwitcher.requestInputWithSkb(editorInfo));
     resetToIdleState(false);
-    mSkbContainer.updateInputMode();
+    mRootContainer.getSkbContainer().updateInputMode();
     setCandidatesViewShown(false);
   }
 
@@ -1132,7 +1131,7 @@ public class PinyinIME extends InputMethodService {
   @Override public void onDisplayCompletions(CompletionInfo[] completions) {
     if (!isFullscreenMode()) return;
     if (null == completions || completions.length <= 0) return;
-    if (null == mSkbContainer || !mSkbContainer.isShown()) return;
+    if (null == mRootContainer.getSkbContainer() || !mRootContainer.getSkbContainer().isShown()) return;
 
     if (!mInputModeSwitcher.isChineseText()
         || ImeState.STATE_IDLE == mImeState
@@ -1167,8 +1166,8 @@ public class PinyinIME extends InputMethodService {
       Log.d(TAG, "DimissSoftInput.");
     }
     dismissCandidateWindow();
-    if (null != mSkbContainer && mSkbContainer.isShown()) {
-      mSkbContainer.dismissPopups();
+    if (null != mRootContainer.getSkbContainer() && mRootContainer.getSkbContainer().isShown()) {
+      mRootContainer.getSkbContainer().dismissPopups();
     }
     super.requestHideSelf(flags);
   }
@@ -1200,7 +1199,7 @@ public class PinyinIME extends InputMethodService {
     mOptionsDialog = builder.create();
     Window window = mOptionsDialog.getWindow();
     WindowManager.LayoutParams lp = window.getAttributes();
-    lp.token = mSkbContainer.getWindowToken();
+    lp.token = mRootContainer.getSkbContainer().getWindowToken();
     lp.type = WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG;
     window.setAttributes(lp);
     window.addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
