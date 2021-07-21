@@ -229,7 +229,7 @@ public class CandidatesContainer extends RelativeLayout
 
   @Override protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
     Environment env = Environment.getInstance();
-    int measuredWidth = env.getScreenWidth();
+    int measuredWidth = env.getScreenWidth() + 750;
     int measuredHeight = getPaddingTop();
     measuredHeight += env.getHeightForCandidates();
     widthMeasureSpec = MeasureSpec.makeMeasureSpec(measuredWidth, MeasureSpec.EXACTLY);

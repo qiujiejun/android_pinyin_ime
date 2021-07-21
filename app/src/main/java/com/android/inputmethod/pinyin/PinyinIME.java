@@ -54,6 +54,7 @@ import com.android.inputmethod.pinyin.setting.SettingsActivity;
 import com.android.inputmethod.pinyin.skb.SoftKey;
 import com.android.inputmethod.pinyin.ui.BalloonHint;
 import com.android.inputmethod.pinyin.ui.CandidatesContainer;
+import com.android.inputmethod.pinyin.ui.CandidatesParentContainer;
 import com.android.inputmethod.pinyin.ui.ComposingView;
 import com.android.inputmethod.pinyin.ui.RootContainer;
 import com.android.inputmethod.pinyin.ui.SkbContainer;
@@ -114,9 +115,9 @@ public class PinyinIME extends InputMethodService {
   private PopupTimer mFloatingWindowTimer = new PopupTimer();
 
   /**
-   * View to show candidates list.
+   * View to contain candidates container (for the non-touchable area on device on the left).
    */
-  private CandidatesContainer mCandidatesContainer;
+  private CandidatesParentContainer mCandidatesParent;
 
   /**
    * Balloon used when user presses a candidate.
@@ -331,8 +332,8 @@ public class PinyinIME extends InputMethodService {
       return false;
     }
 
-    if (null != mCandidatesContainer
-        && mCandidatesContainer.isShown()
+    if (null != getCandidates()
+        && getCandidates().isShown()
         && !mDecInfo.isCandidatesListEmpty()) {
       if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
         if (!realAction) return true;
@@ -343,25 +344,25 @@ public class PinyinIME extends InputMethodService {
 
       if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
         if (!realAction) return true;
-        mCandidatesContainer.activeCurseBackward();
+        getCandidates().activeCurseBackward();
         return true;
       }
 
       if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
         if (!realAction) return true;
-        mCandidatesContainer.activeCurseForward();
+        getCandidates().activeCurseForward();
         return true;
       }
 
       if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
         if (!realAction) return true;
-        mCandidatesContainer.pageBackward(false, true);
+        getCandidates().pageBackward(false, true);
         return true;
       }
 
       if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
         if (!realAction) return true;
-        mCandidatesContainer.pageForward(false, true);
+        getCandidates().pageForward(false, true);
         return true;
       }
 
@@ -459,7 +460,7 @@ public class PinyinIME extends InputMethodService {
           char fullwidth_char = KeyMapDream.getChineseLabel(keyCode);
           if (0 != fullwidth_char) {
             commitResultText(
-                mDecInfo.getCurrentFullSent(mCandidatesContainer.getActiveCandiatePos())
+                mDecInfo.getCurrentFullSent(getCandidates().getActiveCandiatePos())
                     + String.valueOf(fullwidth_char));
             resetToIdleState(false);
           }
@@ -477,7 +478,7 @@ public class PinyinIME extends InputMethodService {
       return processSurfaceChange(keyChar, keyCode);
     } else if (keyChar == ',' || keyChar == '.') {
       if (!realAction) return true;
-      inputCommaPeriod(mDecInfo.getCurrentFullSent(mCandidatesContainer.getActiveCandiatePos()),
+      inputCommaPeriod(mDecInfo.getCurrentFullSent(getCandidates().getActiveCandiatePos()),
           keyChar, true, ImeState.STATE_IDLE);
       return true;
     } else if (keyCode == KeyEvent.KEYCODE_DPAD_UP
@@ -487,26 +488,26 @@ public class PinyinIME extends InputMethodService {
       if (!realAction) return true;
 
       if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-        mCandidatesContainer.activeCurseBackward();
+        getCandidates().activeCurseBackward();
       } else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-        mCandidatesContainer.activeCurseForward();
+        getCandidates().activeCurseForward();
       } else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
         // If it has been the first page, a up key will shift
         // the state to edit composing string.
-        if (!mCandidatesContainer.pageBackward(false, true)) {
-          mCandidatesContainer.enableActiveHighlight(false);
+        if (!getCandidates().pageBackward(false, true)) {
+          getCandidates().enableActiveHighlight(false);
           changeToStateComposing(true);
           updateComposingText(true);
         }
       } else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-        mCandidatesContainer.pageForward(false, true);
+        getCandidates().pageForward(false, true);
       }
       return true;
     } else if (keyCode >= KeyEvent.KEYCODE_1 && keyCode <= KeyEvent.KEYCODE_9) {
       if (!realAction) return true;
 
       int activePos = keyCode - KeyEvent.KEYCODE_1;
-      int currentPage = mCandidatesContainer.getCurrentPage();
+      int currentPage = getCandidates().getCurrentPage();
       if (activePos < mDecInfo.getCurrentPageSize(currentPage)) {
         activePos = activePos + mDecInfo.getCurrentPageStart(currentPage);
         if (activePos >= 0) {
@@ -520,7 +521,7 @@ public class PinyinIME extends InputMethodService {
         commitResultText(mDecInfo.getOriginalSplStr().toString());
         resetToIdleState(false);
       } else {
-        commitResultText(mDecInfo.getCurrentFullSent(mCandidatesContainer.getActiveCandiatePos()));
+        commitResultText(mDecInfo.getCurrentFullSent(getCandidates().getActiveCandiatePos()));
         sendKeyChar('\n');
         resetToIdleState(false);
       }
@@ -547,7 +548,7 @@ public class PinyinIME extends InputMethodService {
       char fullwidth_char = KeyMapDream.getChineseLabel(keyCode);
       if (0 != fullwidth_char) {
         commitResultText(
-            mDecInfo.getCandidate(mCandidatesContainer.getActiveCandiatePos()) + String.valueOf(
+            mDecInfo.getCandidate(getCandidates().getActiveCandiatePos()) + String.valueOf(
                 fullwidth_char));
         resetToIdleState(false);
       }
@@ -567,16 +568,16 @@ public class PinyinIME extends InputMethodService {
         || keyCode == KeyEvent.KEYCODE_DPAD_LEFT
         || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
       if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-        mCandidatesContainer.activeCurseBackward();
+        getCandidates().activeCurseBackward();
       }
       if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-        mCandidatesContainer.activeCurseForward();
+        getCandidates().activeCurseForward();
       }
       if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-        mCandidatesContainer.pageBackward(false, true);
+        getCandidates().pageBackward(false, true);
       }
       if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-        mCandidatesContainer.pageForward(false, true);
+        getCandidates().pageForward(false, true);
       }
     } else if (keyCode == KeyEvent.KEYCODE_DEL) {
       resetToIdleState(false);
@@ -585,7 +586,7 @@ public class PinyinIME extends InputMethodService {
       requestHideSelf(0);
     } else if (keyCode >= KeyEvent.KEYCODE_1 && keyCode <= KeyEvent.KEYCODE_9) {
       int activePos = keyCode - KeyEvent.KEYCODE_1;
-      int currentPage = mCandidatesContainer.getCurrentPage();
+      int currentPage = getCandidates().getCurrentPage();
       if (activePos < mDecInfo.getCurrentPageSize(currentPage)) {
         activePos = activePos + mDecInfo.getCurrentPageStart(currentPage);
         if (activePos >= 0) {
@@ -656,7 +657,7 @@ public class PinyinIME extends InputMethodService {
     } else if (keyCode == KeyEvent.KEYCODE_ENTER && !mInputModeSwitcher.isEnterNoramlState()) {
       String retStr;
       if (!mDecInfo.isCandidatesListEmpty()) {
-        retStr = mDecInfo.getCurrentFullSent(mCandidatesContainer.getActiveCandiatePos());
+        retStr = mDecInfo.getCurrentFullSent(getCandidates().getActiveCandiatePos());
       } else {
         retStr = mDecInfo.getComposingStr();
       }
@@ -875,7 +876,7 @@ public class PinyinIME extends InputMethodService {
   // from candidate view, otherwise use activeCandNo.
   private void chooseCandidate(int activeCandNo) {
     if (activeCandNo < 0) {
-      activeCandNo = mCandidatesContainer.getActiveCandiatePos();
+      activeCandNo = getCandidates().getActiveCandiatePos();
     }
     if (activeCandNo >= 0) {
       chooseAndUpdate(activeCandNo);
@@ -901,6 +902,10 @@ public class PinyinIME extends InputMethodService {
     return true;
   }
 
+  public CandidatesContainer getCandidates() {
+    return mCandidatesParent.getCandidatesContainer();
+  }
+
   @Override public View onCreateCandidatesView() {
     if (mEnvironment.needDebug()) {
       Log.d(TAG, "onCreateCandidatesView.");
@@ -913,14 +918,17 @@ public class PinyinIME extends InputMethodService {
     // The first child is the composing view.
     mComposingView = (ComposingView) mFloatingContainer.getChildAt(0);
 
-    mCandidatesContainer =
-        (CandidatesContainer) inflater.inflate(R.layout.candidates_container, null);
+//    mCandidatesContainer =
+//        (CandidatesContainer) inflater.inflate(R.layout.candidates_container, null);
+    mCandidatesParent = (CandidatesParentContainer) inflater.inflate(
+            R.layout.candidates_parent_container, null);
+    mCandidatesParent.init();
 
     // Create balloon hint for candidates view.
-    mCandidatesBalloon = new BalloonHint(this, mCandidatesContainer, MeasureSpec.UNSPECIFIED);
+    mCandidatesBalloon = new BalloonHint(this, getCandidates(), MeasureSpec.UNSPECIFIED);
     mCandidatesBalloon.setBalloonBackground(
         getResources().getDrawable(R.drawable.candidate_balloon_bg));
-    mCandidatesContainer.initialize(mChoiceNotifier, mCandidatesBalloon,
+    mCandidatesParent.getCandidatesContainer().initialize(mChoiceNotifier, mCandidatesBalloon,
         mGestureDetectorCandidates);
 
     // The floating window
@@ -935,7 +943,7 @@ public class PinyinIME extends InputMethodService {
     mFloatingWindow.setContentView(mFloatingContainer);
 
     setCandidatesViewShown(true);
-    return mCandidatesContainer;
+    return mCandidatesParent;
   }
 
   public void responseSoftKeyEvent(SoftKey sKey) {
@@ -977,7 +985,7 @@ public class PinyinIME extends InputMethodService {
         if (!kUsed) {
           if (ImeState.STATE_INPUT == mImeState) {
             commitResultText(
-                mDecInfo.getCurrentFullSent(mCandidatesContainer.getActiveCandiatePos()));
+                mDecInfo.getCurrentFullSent(getCandidates().getActiveCandiatePos()));
           } else if (ImeState.STATE_COMPOSING == mImeState) {
             commitResultText(mDecInfo.getComposingStr());
           }
@@ -998,20 +1006,20 @@ public class PinyinIME extends InputMethodService {
 
   private void showCandidateWindow(boolean showComposingView) {
     if (mEnvironment.needDebug()) {
-      Log.d(TAG, "Candidates window is shown. Parent = " + mCandidatesContainer);
+      Log.d(TAG, "Candidates window is shown. Parent = " + getCandidates());
     }
 
     setCandidatesViewShown(true);
 
     if (null != mRootContainer.getSkbContainer()) mRootContainer.getSkbContainer().requestLayout();
 
-    if (null == mCandidatesContainer) {
+    if (null == getCandidates()) {
       resetToIdleState(false);
       return;
     }
 
     updateComposingText(showComposingView);
-    mCandidatesContainer.showCandidates(mDecInfo, ImeState.STATE_COMPOSING != mImeState);
+    getCandidates().showCandidates(mDecInfo, ImeState.STATE_COMPOSING != mImeState);
     mFloatingWindowTimer.postShowFloatingWindow();
   }
 
@@ -1019,7 +1027,7 @@ public class PinyinIME extends InputMethodService {
     if (mEnvironment.needDebug()) {
       Log.d(TAG, "Candidates window is to be dismissed");
     }
-    if (null == mCandidatesContainer) return;
+    if (null == getCandidates()) return;
     try {
       mFloatingWindowTimer.cancelShowing();
       mFloatingWindow.dismiss();
@@ -1037,7 +1045,7 @@ public class PinyinIME extends InputMethodService {
     if (mEnvironment.needDebug()) {
       Log.d(TAG, "Candidates window is to be reset");
     }
-    if (null == mCandidatesContainer) return;
+    if (null == getCandidates()) return;
     try {
       mFloatingWindowTimer.cancelShowing();
       mFloatingWindow.dismiss();
@@ -1051,7 +1059,7 @@ public class PinyinIME extends InputMethodService {
 
     mDecInfo.resetCandidates();
 
-    if (null != mCandidatesContainer && mCandidatesContainer.isShown()) {
+    if (null != getCandidates() && getCandidates().isShown()) {
       showCandidateWindow(false);
       setCandidatesViewShown(false);
     }
@@ -1231,10 +1239,10 @@ public class PinyinIME extends InputMethodService {
     }
 
     public void run() {
-      mCandidatesContainer.getLocationInWindow(mParentLocation);
+      getCandidates().getLocationInWindow(mParentLocation);
 
       if (!mFloatingWindow.isShowing()) {
-        mFloatingWindow.showAtLocation(mCandidatesContainer, Gravity.LEFT | Gravity.TOP,
+        mFloatingWindow.showAtLocation(getCandidates(), Gravity.LEFT | Gravity.TOP,
             mParentLocation[0], mParentLocation[1] - mFloatingWindow.getHeight());
       } else {
         mFloatingWindow.update(mParentLocation[0], mParentLocation[1] - mFloatingWindow.getHeight(),
@@ -1264,14 +1272,14 @@ public class PinyinIME extends InputMethodService {
       if (ImeState.STATE_COMPOSING == mImeState) {
         changeToStateInput(true);
       }
-      mCandidatesContainer.pageForward(true, false);
+      getCandidates().pageForward(true, false);
     }
 
     public void onToRightGesture() {
       if (ImeState.STATE_COMPOSING == mImeState) {
         changeToStateInput(true);
       }
-      mCandidatesContainer.pageBackward(true, false);
+      getCandidates().pageBackward(true, false);
     }
 
     public void onToTopGesture() {
@@ -1428,11 +1436,11 @@ public class PinyinIME extends InputMethodService {
       }
 
       if (Gravity.LEFT == gravity || Gravity.RIGHT == gravity) {
-        if (mCandidatesContainer.isShown()) {
+        if (getCandidates().isShown()) {
           if (Gravity.LEFT == gravity) {
-            mCandidatesContainer.pageForward(true, true);
+            getCandidates().pageForward(true, true);
           } else {
-            mCandidatesContainer.pageBackward(true, true);
+            getCandidates().pageBackward(true, true);
           }
           return;
         }
